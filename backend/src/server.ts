@@ -20,7 +20,7 @@ const interval = setInterval(() => {
     client.isAlive = false;
     client.ping();
   });
-}, 30000);
+}, 300000);
 
 wss.on("connection", (ws: ExtendedWebSocket) => {
   console.log("Client connected");
