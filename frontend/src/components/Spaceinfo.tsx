@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { setOnMessage, sendMessage } from "../ws"
-import type { Message } from "../types/message"
+import { addMessageListener, sendMessage } from "../ws"
+import { toast, ToastContainer } from "react-toastify"
+
+type Message = {
+  username: string
+  text: string
+  timestamp: number
+}
 
 function Space() {
   const { id } = useParams()
@@ -9,7 +15,9 @@ function Space() {
   const [text, setText] = useState("")
 
   useEffect(() => {
-    setOnMessage((data) => {
+
+    const unsubscribe = addMessageListener((data) => {
+
       if (data.type === "HISTORY") {
         setMessages(data.messages)
       }
@@ -17,19 +25,33 @@ function Space() {
       if (data.type === "NEW_MESSAGE") {
         setMessages(prev => [...prev, data.message])
       }
+
+      if (data.type === "USER_JOINED") {
+        toast.info(`${data.username} joined`)
+      }
+
+      if (data.type === "USER_LEFT") {
+        toast.info(`${data.username} left`)
+      }
+
     })
+
+    return unsubscribe
+
   }, [])
 
   function handleSend() {
+    if (!text.trim()) return
     sendMessage(text)
     setText("")
   }
 
   return (
     <div>
+      <ToastContainer autoClose={1500}/>
       <h2>Space: {id}</h2>
 
-      {messages.map((m: any, i) => (
+      {messages.map((m, i) => (
         <div key={i}>
           <strong>{m.username}</strong>: {m.text}
         </div>
