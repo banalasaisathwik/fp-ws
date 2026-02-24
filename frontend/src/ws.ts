@@ -55,6 +55,14 @@ export function joinSpace(username: string, space: string) {
   }
 }
 
+export function getHistory(){
+  if(ws?.readyState === WebSocket.OPEN ){
+    ws.send(JSON.stringify({
+      type :"GET_HISTORY"
+    }))
+  }
+}
+
 export function sendMessage(text: string) {
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { addMessageListener, sendMessage } from "../ws"
+import { addMessageListener, getHistory, sendMessage } from "../ws"
 import { toast, ToastContainer } from "react-toastify"
 
 type Message = {
@@ -15,7 +15,7 @@ function Space() {
   const [text, setText] = useState("")
 
   useEffect(() => {
-
+    
     const unsubscribe = addMessageListener((data) => {
 
       if (data.type === "HISTORY") {
@@ -35,7 +35,7 @@ function Space() {
       }
 
     })
-
+    getHistory()
     return unsubscribe
 
   }, [])

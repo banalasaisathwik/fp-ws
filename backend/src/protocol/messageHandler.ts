@@ -22,7 +22,7 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
         return;
       }
       const space = getSpace(message.space);
-      if ( space === null) {
+      if (space === null) {
         sendError(ws, "Space does not exist");
         return;
       }
@@ -45,12 +45,6 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
           message: `Joined space ${message.space} successfully`,
         }),
       );
-      ws.send(
-        JSON.stringify({
-          type: "HISTORY",
-          messages: getMessagesForSpace(message.space),
-        }),
-      );
       space?.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
           client.send(
@@ -61,7 +55,19 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
           );
         }
       });
-       
+      break;
+    case "GET_HISTORY":
+      if (ws.connectionState !== "JOINED" || !ws.currentSpace) {
+        sendError(ws, "You must join a space first");
+        return;
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: "HISTORY",
+          messages: getMessagesForSpace(ws.currentSpace),
+        }),
+      );
       break;
     case "MESSAGE":
       if (ws.connectionState !== "JOINED" || !ws.currentSpace || !ws.username) {
@@ -90,7 +96,6 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
       });
 
       break;
-
 
     default:
       sendError(ws, `Unsupported message type: ${message.type}`);
