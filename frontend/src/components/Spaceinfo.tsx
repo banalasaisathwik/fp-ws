@@ -46,10 +46,11 @@ function Space() {
     setText("")
   }
 
+
   return (
     <div>
       <ToastContainer autoClose={1500}/>
-      <h2>Space: {id}</h2>
+      <h2>Space: {id === "space1"}</h2>
 
       {messages.map((m, i) => (
         <div key={i}>

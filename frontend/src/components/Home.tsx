@@ -40,21 +40,21 @@ function Home() {
         <SpaceThumbnail
           spaceId="space1"
           spaceName="HK Web Channel"
-          src="https://picsum.photos/400/300"
+          src={import.meta.env.VITE_SPACE1_IMG}
           handleJoin={handleJoin}
         />
 
         <SpaceThumbnail
           spaceId="space2"
           spaceName="RSHB AI Channel"
-          src="https://picsum.photos/401/300"
+          src={import.meta.env.VITE_SPACE2_IMG}
           handleJoin={handleJoin}
         />
 
         <SpaceThumbnail
           spaceId="space3"
           spaceName="Open Room"
-          src="https://picsum.photos/402/300"
+          src= {import.meta.env.VITE_SPACE3_IMG}
           handleJoin={handleJoin}
         />
       </div>

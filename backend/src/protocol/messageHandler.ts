@@ -1,3 +1,4 @@
+import { pubClient, serverId, subscribeToChannel } from "../infra/redis.js";
 import {
   addClientToSpace,
   addMessageToSpace,
@@ -8,7 +9,7 @@ import {
 import type { BaseMessage, ExtendedWebSocket } from "../types/socket.js";
 import { sendError } from "../utlis/error.js";
 
-function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
+async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
   switch (message.type) {
     case "PING":
       ws.send(JSON.stringify({ type: "PONG" }));
@@ -34,7 +35,9 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
 
       removeClientFromAllSpaces(ws);
       addClientToSpace(message.space, ws);
-
+      if (space?.clients.size === 1) {
+        await subscribeToChannel(message.space);
+      }
       ws.username = message.username;
       ws.connectionState = "JOINED";
       ws.currentSpace = message.space;
@@ -84,6 +87,17 @@ function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
         timestamp: Date.now(),
       };
       addMessageToSpace(ws.currentSpace, storedMessage);
+      
+      await pubClient.publish(
+        ws.currentSpace,
+        JSON.stringify({
+          serverId,
+          data: {
+            type: "NEW_MESSAGE",
+            message: storedMessage,
+          },
+        }),
+      );
       getSpace(ws.currentSpace)?.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(

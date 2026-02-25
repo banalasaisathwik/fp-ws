@@ -3,10 +3,12 @@ let ws: WebSocket | null = null
 
 let listeners: ((data: any) => void)[] = []
 
+const url = import.meta.env.VITE_WEBSOCKET_URL
+
 export function connect() {
   if (ws && ws.readyState === WebSocket.OPEN) return
 
-  ws = new WebSocket("ws://localhost:8080")
+  ws = new WebSocket(url)
 
   ws.onopen = () => {
     console.log("WebSocket Connected")

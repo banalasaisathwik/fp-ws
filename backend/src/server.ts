@@ -1,12 +1,14 @@
+import 'dotenv/config'
 import { WebSocketServer,WebSocket } from "ws";
 import type { ExtendedWebSocket } from "./types/socket.js";
 import { isValidBaseMessage,safeParse } from "./utlis/validation.js";
 import { handleMessage } from "./protocol/messageHandler.js";
 import { sendError } from "./utlis/error.js";
 import { getSpace, removeClientFromAllSpaces } from "./state/spaces.js";
+import {  connectRedis, unsubscribeFromChannel } from "./infra/redis.js";
 
-
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ port: Number(process.env.PORT) ?? 8080 });
+await connectRedis()
 
 const interval = setInterval(() => {
   wss.clients.forEach((ws) => {
@@ -52,10 +54,14 @@ wss.on("connection", (ws: ExtendedWebSocket) => {
     removeClientFromAllSpaces(ws);
     const username = ws.username;
     const spaceName = ws.currentSpace;
+    
     if (!username || !spaceName) {
       return;
     }
     const space = getSpace(spaceName);
+     if(space?.clients.size == 0 && ws.currentSpace){
+      unsubscribeFromChannel(ws.currentSpace)
+    }
     if (space) {
       space.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
