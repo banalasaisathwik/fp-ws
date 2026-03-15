@@ -1,0 +1,1 @@
+{"version":3,"file":"messageHandler.d.ts","sourceRoot":"","sources":["../../src/protocol/messageHandler.ts"],"names":[],"mappings":"AAQA,OAAO,KAAK,EAAE,WAAW,EAAE,iBAAiB,EAAE,MAAM,oBAAoB,CAAC;AAGzE,iBAAe,aAAa,CAAC,EAAE,EAAE,iBAAiB,EAAE,OAAO,EAAE,WAAW,iBAyGvE;AAED,OAAO,EAAE,aAAa,EAAE,CAAC"}

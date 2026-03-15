@@ -1,0 +1,91 @@
+import { pubClient, serverId, subscribeToChannel } from "../infra/redis.js";
+import { addClientToSpace, addMessageToSpace, getMessagesForSpace, getSpace, removeClientFromAllSpaces, } from "../state/spaces.js";
+import { sendError } from "../utlis/error.js";
+async function handleMessage(ws, message) {
+    switch (message.type) {
+        case "PING":
+            ws.send(JSON.stringify({ type: "PONG" }));
+            break;
+        case "JOIN":
+            if (typeof message.username !== "string" ||
+                message.username.length === 0) {
+                sendError(ws, "Invalid username");
+                return;
+            }
+            const space = getSpace(message.space);
+            if (space === null) {
+                sendError(ws, "Space does not exist");
+                return;
+            }
+            if (typeof message.space !== "string" || message.space.length === 0) {
+                sendError(ws, "Invalid space name");
+                return;
+            }
+            removeClientFromAllSpaces(ws);
+            addClientToSpace(message.space, ws);
+            if (space?.clients.size === 1) {
+                await subscribeToChannel(message.space);
+            }
+            ws.username = message.username;
+            ws.connectionState = "JOINED";
+            ws.currentSpace = message.space;
+            ws.send(JSON.stringify({
+                type: "JOINED",
+                message: `Joined space ${message.space} successfully`,
+            }));
+            space?.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "USER_JOINED",
+                        username: ws.username,
+                    }));
+                }
+            });
+            break;
+        case "GET_HISTORY":
+            if (ws.connectionState !== "JOINED" || !ws.currentSpace) {
+                sendError(ws, "You must join a space first");
+                return;
+            }
+            ws.send(JSON.stringify({
+                type: "HISTORY",
+                messages: getMessagesForSpace(ws.currentSpace),
+            }));
+            break;
+        case "MESSAGE":
+            if (ws.connectionState !== "JOINED" || !ws.currentSpace || !ws.username) {
+                sendError(ws, "You must join a space before sending messages");
+                return;
+            }
+            if (typeof message.text !== "string" || message.text.length === 0) {
+                sendError(ws, "Message text cannot be empty");
+                return;
+            }
+            const storedMessage = {
+                username: ws.username,
+                text: message.text,
+                timestamp: Date.now(),
+            };
+            addMessageToSpace(ws.currentSpace, storedMessage);
+            await pubClient.publish(ws.currentSpace, JSON.stringify({
+                serverId,
+                data: {
+                    type: "NEW_MESSAGE",
+                    message: storedMessage,
+                },
+            }));
+            getSpace(ws.currentSpace)?.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "NEW_MESSAGE",
+                        message: storedMessage,
+                    }));
+                }
+            });
+            break;
+        default:
+            sendError(ws, `Unsupported message type: ${message.type}`);
+    }
+}
+export { handleMessage };
+//# sourceMappingURL=messageHandler.js.map

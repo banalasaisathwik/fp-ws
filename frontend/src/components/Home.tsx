@@ -39,21 +39,21 @@ function Home() {
       <div className="spaces-container">
         <SpaceThumbnail
           spaceId="space1"
-          spaceName="HK Web Channel"
+          spaceName="harkirat Room"
           src={import.meta.env.VITE_SPACE1_IMG}
           handleJoin={handleJoin}
         />
 
         <SpaceThumbnail
           spaceId="space2"
-          spaceName="RSHB AI Channel"
+          spaceName="Rishab Room"
           src={import.meta.env.VITE_SPACE2_IMG}
           handleJoin={handleJoin}
         />
 
         <SpaceThumbnail
           spaceId="space3"
-          spaceName="Open Room"
+          spaceName="Dhruv Room"
           src= {import.meta.env.VITE_SPACE3_IMG}
           handleJoin={handleJoin}
         />
