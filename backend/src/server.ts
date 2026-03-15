@@ -7,7 +7,11 @@ import { sendError } from "./utlis/error.js";
 import { getSpace, removeClientFromAllSpaces } from "./state/spaces.js";
 import {  connectRedis, unsubscribeFromChannel } from "./infra/redis.js";
 
-const wss = new WebSocketServer({ port: Number(process.env.PORT) ?? 8080 });
+const port = Number(process.env.PORT || 8080)
+
+const wss = new WebSocketServer({ port })
+
+console.log("Server running on port", port)
 await connectRedis()
 
 const interval = setInterval(() => {
