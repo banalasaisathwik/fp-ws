@@ -22,7 +22,7 @@ async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
         sendError(ws, "Invalid username");
         return;
       }
-      const space = getSpace(message.space);
+      const space = await getSpace(message.space);
       if (space === null) {
         sendError(ws, "Space does not exist");
         return;
@@ -33,8 +33,8 @@ async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
         return;
       }
 
-      removeClientFromAllSpaces(ws);
-      addClientToSpace(message.space, ws);
+      await removeClientFromAllSpaces(ws);
+      await addClientToSpace(message.space, ws);
       if (space?.clients.size === 1) {
         await subscribeToChannel(message.space);
       }
@@ -68,7 +68,7 @@ async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
       ws.send(
         JSON.stringify({
           type: "HISTORY",
-          messages: getMessagesForSpace(ws.currentSpace),
+          messages: await getMessagesForSpace(ws.currentSpace),
         }),
       );
       break;
@@ -86,7 +86,7 @@ async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
         text: message.text,
         timestamp: Date.now(),
       };
-      addMessageToSpace(ws.currentSpace, storedMessage);
+      await addMessageToSpace(ws.currentSpace, storedMessage);
       
       await pubClient.publish(
         ws.currentSpace,
@@ -98,7 +98,7 @@ async function handleMessage(ws: ExtendedWebSocket, message: BaseMessage) {
           },
         }),
       );
-      getSpace(ws.currentSpace)?.clients.forEach((client) => {
+      (await getSpace(ws.currentSpace))?.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(
             JSON.stringify({

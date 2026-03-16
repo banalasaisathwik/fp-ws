@@ -5,7 +5,9 @@ import { handleMessage } from "./protocol/messageHandler.js";
 import { sendError } from "./utlis/error.js";
 import { getSpace, removeClientFromAllSpaces } from "./state/spaces.js";
 import { connectRedis, unsubscribeFromChannel } from "./infra/redis.js";
-const wss = new WebSocketServer({ port: Number(process.env.PORT) ?? 8080 });
+const port = Number(process.env.PORT || 8080);
+const wss = new WebSocketServer({ port });
+console.log("Server running on port", port);
 await connectRedis();
 const interval = setInterval(() => {
     wss.clients.forEach((ws) => {
@@ -36,16 +38,16 @@ wss.on("connection", (ws) => {
         }
         handleMessage(ws, parsed);
     });
-    ws.on("close", () => {
+    ws.on("close", async () => {
         console.log("Client disconnected");
         clearInterval(interval);
-        removeClientFromAllSpaces(ws);
+        await removeClientFromAllSpaces(ws);
         const username = ws.username;
         const spaceName = ws.currentSpace;
         if (!username || !spaceName) {
             return;
         }
-        const space = getSpace(spaceName);
+        const space = await getSpace(spaceName);
         if (space?.clients.size == 0 && ws.currentSpace) {
             unsubscribeFromChannel(ws.currentSpace);
         }

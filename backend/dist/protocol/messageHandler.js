@@ -12,7 +12,7 @@ async function handleMessage(ws, message) {
                 sendError(ws, "Invalid username");
                 return;
             }
-            const space = getSpace(message.space);
+            const space = await getSpace(message.space);
             if (space === null) {
                 sendError(ws, "Space does not exist");
                 return;
@@ -21,8 +21,8 @@ async function handleMessage(ws, message) {
                 sendError(ws, "Invalid space name");
                 return;
             }
-            removeClientFromAllSpaces(ws);
-            addClientToSpace(message.space, ws);
+            await removeClientFromAllSpaces(ws);
+            await addClientToSpace(message.space, ws);
             if (space?.clients.size === 1) {
                 await subscribeToChannel(message.space);
             }
@@ -49,7 +49,7 @@ async function handleMessage(ws, message) {
             }
             ws.send(JSON.stringify({
                 type: "HISTORY",
-                messages: getMessagesForSpace(ws.currentSpace),
+                messages: await getMessagesForSpace(ws.currentSpace),
             }));
             break;
         case "MESSAGE":
@@ -66,7 +66,7 @@ async function handleMessage(ws, message) {
                 text: message.text,
                 timestamp: Date.now(),
             };
-            addMessageToSpace(ws.currentSpace, storedMessage);
+            await addMessageToSpace(ws.currentSpace, storedMessage);
             await pubClient.publish(ws.currentSpace, JSON.stringify({
                 serverId,
                 data: {
@@ -74,7 +74,7 @@ async function handleMessage(ws, message) {
                     message: storedMessage,
                 },
             }));
-            getSpace(ws.currentSpace)?.clients.forEach((client) => {
+            (await getSpace(ws.currentSpace))?.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({
                         type: "NEW_MESSAGE",

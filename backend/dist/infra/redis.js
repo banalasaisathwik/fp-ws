@@ -1,22 +1,23 @@
-import { createClient } from "redis";
 import { randomUUID } from "crypto";
+import { createClient } from "redis";
+import { WebSocket } from "ws";
 import { getSpace } from "../state/spaces.js";
 export const serverId = randomUUID();
 export const pubClient = createClient({
-    username: process.env.REDIS_USERNAME ?? 'default_user',
+    username: process.env.REDIS_USERNAME ?? "default_user",
     password: process.env.REDIS_PASSWORD,
     socket: {
-        host: process.env.REDIS_HOST ?? '127.0.0.1',
-        port: 14432
-    }
+        host: process.env.REDIS_HOST ?? "127.0.0.1",
+        port: 14432,
+    },
 });
 export const subClient = createClient({
-    username: process.env.REDIS_USERNAME ?? 'default_user',
+    username: process.env.REDIS_USERNAME ?? "default_user",
     password: process.env.REDIS_PASSWORD,
     socket: {
-        host: process.env.REDIS_HOST ?? '127.0.0.1',
-        port: 14432
-    }
+        host: process.env.REDIS_HOST ?? "127.0.0.1",
+        port: 14432,
+    },
 });
 const subscribedChannels = new Set();
 export async function connectRedis() {
@@ -28,7 +29,7 @@ export async function subscribeToChannel(channel) {
     if (subscribedChannels.has(channel))
         return;
     await subClient.subscribe(channel, (message) => {
-        handleRedisMessage(channel, message);
+        void handleRedisMessage(channel, message);
     });
     subscribedChannels.add(channel);
     console.log(`subscribed to ${channel}`);
@@ -40,14 +41,14 @@ export async function unsubscribeFromChannel(channel) {
     subscribedChannels.delete(channel);
     console.log("Unsubscribed from:", channel);
 }
-function handleRedisMessage(channel, rawMessage) {
+async function handleRedisMessage(channel, rawMessage) {
     const parsed = JSON.parse(rawMessage);
     if (parsed.serverId === serverId)
         return;
-    const space = getSpace(channel);
+    const space = await getSpace(channel);
     if (!space)
         return;
-    space.clients.forEach(client => {
+    space.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(parsed.data));
         }
